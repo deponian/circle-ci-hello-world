@@ -24,12 +24,6 @@ jobs:
           command: |
             . venv/bin/activate
             python main.py
-  deploy:
-    steps:
-      - checkout
-      - run:
-          name: Deploy Master to Heroku
-          command: echo "Deploy"
 
 workflows:
   version: 2
