@@ -13,6 +13,9 @@ jobs:
           root: workspace
           paths:
             - main
+      - store_artifacts:
+          path: workspace/main
+          destination: artifact-file
 
   test1:
     docker:
