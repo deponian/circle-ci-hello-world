@@ -2,19 +2,63 @@
 version: 2.1
 
 jobs:
-  job1:
+  build:
     docker:
-      - image: cimg/base:2020.01
+      - image: circleci/golang:1.15
     steps:
       - checkout
-      - run:
-          name: Hello World
-          command: echo "Hello World!"
-      - run:
-          name: ls repo content
-          command: pwd && ls -la
+      - run: mkdir -p workspace
+      - run: go build -o workspace/main
+      - persist_to_workspace:
+          root: workspace
+          paths:
+            - main
+
+  test1:
+    docker:
+      - image: alpine
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: /tmp/workspace/main
+
+  test2:
+    docker:
+      - image: alpine
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: /tmp/workspace/main one_arg
+
+  test3:
+    docker:
+      - image: alpine
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run: /tmp/workspace/main two_args
+
+  deploy:
+    docker:
+      - image: alpine
+    steps:
+      - run: echo "Deploy"
 
 workflows:
-  welcome:
+  main:
     jobs:
-      - job1
+      - build
+      - test1:
+          requires:
+            - build
+      - test2:
+          requires:
+            - build
+      - test3:
+          requires:
+            - build
+      - deploy:
+          requires:
+            - test1
+            - test2
+            - test3
