@@ -1,67 +1,45 @@
 ---
-version: 2.1
-
+version: 2
 jobs:
   build:
     docker:
-      - image: circleci/golang:1.15
+      - image: circleci/python:3.6.2-stretch-browsers
+        environment:
+          FLASK_CONFIG: testing
     steps:
       - checkout
-      - run: mkdir -p workspace
-      - run: go build -o workspace/main
-      - persist_to_workspace:
-          root: workspace
+      - restore_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}
+      - run:
+          name: Install Python deps in a venv
+          command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install -r requirements/dev.txt
+      - save_cache:
+          key: deps1-{{ .Branch }}-{{ checksum "requirements/dev.txt" }}
           paths:
-            - main
-      - store_artifacts:
-          path: workspace/main
-          destination: artifact-file
-
-  test1:
-    docker:
-      - image: alpine
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - run: /tmp/workspace/main
-
-  test2:
-    docker:
-      - image: alpine
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - run: /tmp/workspace/main one_arg
-
-  test3:
-    docker:
-      - image: alpine
-    steps:
-      - attach_workspace:
-          at: /tmp/workspace
-      - run: /tmp/workspace/main two_args
-
+            - "venv"
+      - run:
+          command: |
+            . venv/bin/activate
+            python main.py
   deploy:
-    docker:
-      - image: alpine
     steps:
-      - run: echo "Deploy"
+      - checkout
+      - run:
+          name: Deploy Master to Heroku
+          command: echo "Deploy"
 
 workflows:
-  main:
+  version: 2
+  build-deploy:
     jobs:
       - build
-      - test1:
-          requires:
-            - build
-      - test2:
-          requires:
-            - build
-      - test3:
-          requires:
-            - build
       - deploy:
           requires:
-            - test1
-            - test2
-            - test3
+            - build
+          filters:
+            branches:
+              only: master
+
