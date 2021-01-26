@@ -1,4 +1,4 @@
-colorama==0.3.10
+colorama==0.4.4
 coverage==4.4.1
 httpie==1.0.3
 requests==2.20.0
